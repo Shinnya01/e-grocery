@@ -1,11 +1,10 @@
 <?php
 
-use App\Http\Controllers\ProductController;
-use App\Http\Controllers\UsersController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
-
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\UsersController;
 
 Route::get('/', function () {
     return Inertia::render('welcome', [
@@ -19,6 +18,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     })->name('dashboard');
 
     Route::resource('products', ProductController::class);
+    Route::resource('order-history', OrderHistoryController::class);
 });
 
 Route::resource('manage-users', UsersController::class);

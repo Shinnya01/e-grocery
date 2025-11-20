@@ -23,11 +23,11 @@ class UserSeeder extends Seeder
             ]
         );
         User::firstOrCreate(
-            ['email' => 'user@gmail.com'],
+            ['email' => 'customer@gmail.com'],
             [
-                'name' => 'User',
+                'name' => 'Cstomer',
                 'password' => Hash::make('password'),
-                'role' => 'user'
+                'role' => 'customer'
             ]
         );
     }

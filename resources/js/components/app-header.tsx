@@ -43,13 +43,8 @@ const mainNavItems: NavItem[] = [
         icon: Shirt,
     },
     {
-        title: 'Cart',
-        href: '',
-        icon: Shirt,
-    },
-    {
         title: 'Order History',
-        href: '',
+        href: '/order-history',
         icon: Shirt,
     },
 ];
@@ -71,7 +66,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
     const getInitials = useInitials();
     return (
         <>
-            <div className="border-b border-sidebar-border/80">
+            <div className="border-b border-sidebar-border/80 z-99 bg-black sticky top-0 ">
                 <div className="mx-auto flex h-16 items-center px-4 md:max-w-7xl">
                     {/* Mobile Menu */}
                     <div className="lg:hidden">
