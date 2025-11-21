@@ -2,21 +2,23 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import AppLayout from "@/layouts/app-layout";
-import { Head, router } from "@inertiajs/react";
-import { Apple, Candy, Croissant, CupSoda, Drumstick, Fish, Milk, MinusIcon, PillBottle, PlusIcon, Search, ShoppingCart, Snowflake, Wheat } from "lucide-react";
+import { Head, router, usePage } from "@inertiajs/react";
+import { Apple, Candy, Croissant, CupSoda, Drumstick, Fish, Milk, MinusIcon, PillBottle, PlusIcon, Search, ShoppingCart, Snowflake, Wheat, X } from "lucide-react";
 import { toast } from "sonner";
 import { PlaceholderPattern } from "@/components/ui/placeholder-pattern";
 import { ButtonGroup, ButtonGroupSeparator } from "@/components/ui/button-group";
+import { SharedData } from "@/types";
 
 interface Product {
   id: number;
   name: string;
   price: number;
   image?: string | null;
+  category: string;
 }
 
 interface CartItem {
@@ -41,47 +43,61 @@ const categories = [
 
 export default function Products({ carts, products }: { carts: CartItem[], products: Product[] }) {
   const [cart, setCart] = useState<CartItem[]>(carts || []);
-
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   
+
+  const filteredProducts = products.filter((product) => {
+    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = selectedCategory ? product.category === selectedCategory : true;
+    return matchesSearch && matchesCategory;
+  });
+
 
   const handleView = (product: Product) => {
     router.visit(`/products/${product.id}`);
   };
 
-const handleAddToCart = (product: Product) => {
-  // Update local state
-  setCart((prev) => {
-    const existing = prev.find((item) => item.product.id === product.id);
-    if (existing) {
-      return prev.map((item) =>
-        item.product.id === product.id
-          ? { ...item, quantity: item.quantity + 1 }
-          : item
-      );
-    }
-    return [...prev, { id: Date.now(), product, quantity: 1 }];
-  });
+  const handleAddToCart = (product: Product) => {
+    // Update local state
+    setCart((prev) => {
+      const existing = prev.find((item) => item.product.id === product.id);
+      if (existing) {
+        return prev.map((item) =>
+          item.product.id === product.id
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        );
+      }
+      return [...prev, { id: Date.now(), product, quantity: 1 }];
+    });
 
-  // Post to backend
-  router.post('/cart', { product_id: product.id });
-};
+    // Post to backend
+    router.post('/cart', { product_id: product.id });
+  };
 
+  const page = usePage<SharedData>();
+  const { auth } = page.props;
 
 
   return (
     <AppLayout>
       <Head title="Products" />
       <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
-        <div className="flex-1 grid grid-cols-4 gap-4">
+        <div className="flex-1 grid grid-cols-3 gap-4">
           {/* MAIN CONTENT */}
-          <div className="col-span-3 h-fit space-y-4">
+          <div className="col-span-2 h-fit space-y-4">
             {/* Search Bar */}
             <InputGroup className="max-w-lg">
-              <InputGroupInput placeholder="Search..." />
+              <InputGroupInput 
+                placeholder="Search..." 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                />
               <InputGroupAddon>
                 <Search />
               </InputGroupAddon>
-              <InputGroupAddon align="inline-end">{products.length} results</InputGroupAddon>
+              <InputGroupAddon align="inline-end">{filteredProducts.length} results</InputGroupAddon>
             </InputGroup>
 
             {/* Categories placeholder */}
@@ -92,7 +108,9 @@ const handleAddToCart = (product: Product) => {
                 return (
                   <Card
                     key={i}
-                    className="p-4 rounded-lg flex flex-col items-center justify-start hover:bg-zinc-900 w-28 h-28 cursor-pointer transition shrink-0 gap-0 "
+                    className={`p-4 rounded-lg flex flex-col items-center justify-start w-28 h-28 cursor-pointer transition shrink-0 gap-0
+                    ${selectedCategory === item.name ? 'bg-zinc-900' : 'hover:bg-zinc-800'}`}
+                    onClick={() => setSelectedCategory(selectedCategory === item.name ? null : item.name)}
                   >
                     <Icon className="size-10 text-white shrink-0" />
 
@@ -109,7 +127,12 @@ const handleAddToCart = (product: Product) => {
 
             {/* Product Grid */}
             <div className="grid grid-cols-5 gap-2">
-              {products.map((product) => (
+              {filteredProducts.length === 0 && (
+                <div className="col-span-5">
+                  <p className="text-center text-gray-500">No products found.</p>
+                </div>
+              )}
+              {filteredProducts.map((product) => (
                 <Card
                   key={product.id}
                   className="p-0 flex rounded-lg overflow-hidden gap-0 cursor-pointer"
@@ -120,15 +143,16 @@ const handleAddToCart = (product: Product) => {
                       src={`/storage/${product.image}`}
                       alt={product.name}
                       className="min-h-30 h-30 w-full object-cover"
+                      onClick={() => handleView(product)}
                     />
                   ) : (
-                    <div className="min-h-30 h-30 w-full bg-gray-100" />
+                    <div className="min-h-30 h-30 w-full bg-gray-100" onClick={() => handleView(product)}/>
                   )}
 
                   <div className="grid grid-cols-[1fr_auto] items-end p-2 w-full">
-                    <div>
-                      <h3 className="text-base font-medium">{product.name}</h3>
-                      <p className="text-sm text-gray-500">${product.price.toFixed(2)}</p>
+                    <div className="overflow-hidden">
+                      <h3 className="text-base font-medium truncate">{product.name}</h3>
+                      <p className="text-sm text-gray-500">₱{product.price.toFixed(2)}</p>
                     </div>
                     <Button size="sm" variant="outline" onClick={() => handleAddToCart(product)}>
                         <ShoppingCart />
@@ -141,90 +165,153 @@ const handleAddToCart = (product: Product) => {
           </div>
 
           {/* CART */}
-          <Card className="flex-1 h-132 sticky top-20 self-start gap-0">
+          <Card className="flex-1 h-132 sticky top-20 self-start gap-0 pb-0 overflow-hidden">
             <CardHeader className="p-2">
               <CardTitle>Your Cart</CardTitle>
             </CardHeader>
-            <CardContent className="text-center p-2">
+            <CardContent className="text-center p-2 flex-1">
               {cart.length === 0 ? (
                 <>
                   <p>🍪</p>
                   <p>Your cart is empty.</p>
                 </>
               ) : (
-                <div className="space-y-4">
-                  {cart.map((item) => (
-                    <div
-                      key={item.id}
-                      className="grid grid-cols-[auto_1fr_auto] items-center gap-2  p-2 rounded-lg"
-                    >
-                      {/* Thumbnail */}
-                      {item.product.image ? (
-                        <img
-                          src={`/storage/${item.product.image}`}
-                          alt={item.product.name}
-                          className="w-12 h-12 object-cover rounded-md"
-                        />
-                      ) : (
-                        <div className="w-12 h-12 bg-gray-200 rounded-md" />
-                      )}
+                <ScrollArea className="h-90 pr-2"> 
+                  <div className="space-y-4">
+                    {cart.map((item) => (
+                      <div
+                        key={item.id}
+                        className="grid grid-cols-[auto_1fr_auto_auto] items-center gap-2 p-2 rounded-lg"
+                      >
+                        {/* Thumbnail */}
+                        {item.product.image ? (
+                          <img
+                            src={`/storage/${item.product.image}`}
+                            alt={item.product.name}
+                            className="w-12 h-12 object-cover rounded-md"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 bg-gray-200 rounded-md" />
+                        )}
 
-                      {/* Name & Price */}
-                      <div className="flex flex-col text-left">
-                        <h3 className="text-sm font-medium">{item.product.name}</h3>
-                        <p className="text-xs text-gray-500">${ (item.product.price * item.quantity).toFixed(2) }</p>
-                      </div>
+                        {/* Name & Price */}
+                        <div className="flex flex-col text-left">
+                          <h3 className="text-sm font-medium">{item.product.name}</h3>
+                          <p className="text-xs text-gray-500">
+                            ₱{(item.product.price * item.quantity).toFixed(2)}
+                          </p>
+                        </div>
 
-                      {/* Quantity controls */}
-                      <ButtonGroup>
-                        <Button
-                          size="icon"
-                          variant="secondary"
-                          onClick={() => {
-                            if (item.quantity === 1) {
-                              // Remove item from cart
-                              setCart((prev) => prev.filter((i) => i.product.id !== item.product.id));
-                              router.delete(`/cart/${item.id}`);
-                            } else {
-                              // Decrease quantity
+                        {/* Quantity controls */}
+                        <ButtonGroup>
+                          <Button
+                            size="icon"
+                            variant="secondary"
+                            onClick={() => {
+                              if (item.quantity === 1) {
+                                setCart((prev) =>
+                                  prev.filter((i) => i.product.id !== item.product.id)
+                                );
+                                router.delete(`/cart/${item.id}`);
+                              } else {
+                                setCart((prev) =>
+                                  prev.map((i) =>
+                                    i.product.id === item.product.id
+                                      ? { ...i, quantity: i.quantity - 1 }
+                                      : i
+                                  )
+                                );
+                                router.patch(`/cart/${item.id}`, {
+                                  quantity: item.quantity - 1,
+                                });
+                              }
+                            }}
+                          >
+                            <MinusIcon />
+                          </Button>
+
+                          <Button variant="secondary">{item.quantity}</Button>
+
+                          <Button
+                            size="icon"
+                            variant="secondary"
+                            onClick={() => {
                               setCart((prev) =>
                                 prev.map((i) =>
                                   i.product.id === item.product.id
-                                    ? { ...i, quantity: i.quantity - 1 }
+                                    ? { ...i, quantity: i.quantity + 1 }
                                     : i
                                 )
                               );
-                              router.patch(`/cart/${item.id}`, { quantity: item.quantity - 1 });
-                            }
-                          }}
-                        >
-                          <MinusIcon />
+                              router.patch(`/cart/${item.id}`, {
+                                quantity: item.quantity + 1,
+                              });
+                            }}
+                          >
+                            <PlusIcon />
+                          </Button>
+                        </ButtonGroup>
+
+                        <Button variant="destructive" size="icon-sm">
+                          <X />
                         </Button>
-                        <Button variant="secondary">{item.quantity}</Button>
-                        <Button
-                          size="icon"
-                          variant="secondary"
-                          onClick={() => {
-                            setCart((prev) =>
-                              prev.map((i) =>
-                                i.product.id === item.product.id
-                                  ? { ...i, quantity: i.quantity + 1 }
-                                  : i
-                              )
-                            );
-                            router.patch(`/cart/${item.id}`, { quantity: item.quantity + 1 });
-                          }}
-                        >
-                          <PlusIcon />
-                        </Button>
-                      </ButtonGroup>
-                    </div>
-                  ))}
-                  
-                </div>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
               )}
             </CardContent>
 
+            {cart.length > 0 && (
+                <CardFooter className="p-0 mt-auto bg-zinc-900 flex flex-col gap-2">
+              
+                <div className="flex justify-between p-2 w-full">
+                  <span className="font-medium">Total:</span>
+                  <span className="font-normal">
+                    ₱{cart.reduce((total, item) => total + item.product.price * item.quantity, 0).toFixed(2)}
+                  </span>
+                </div>
+
+              <Button 
+                className="w-full"
+                onClick={() => {
+                  if (cart.length === 0) {
+                    toast.error("Cart is empty");
+                    return;
+                  }
+                  // Replace `user` with your actual user object passed to this component
+                  // if (!auth.user?.address) {
+                  //   toast.error(
+                  //     <span>
+                  //       Please add your address before checking out.
+                  //       <br/>
+                  //       <a
+                  //         href="/settings/profile"
+                  //         rel="noopener noreferrer"
+                  //         className="underline text-blue-600"
+                  //       >
+                  //         Click to add address.
+                  //       </a>
+                  //     </span>
+                  //   );
+                  //   return; // stop checkout
+                  // }
+
+                  // Proceed with checkout
+                  router.post("/order", {
+                    cart: cart.map((item) => ({
+                      product_id: item.product.id,
+                      quantity: item.quantity,
+                    })),
+                  });
+                }} 
+
+                >
+                Checkout
+              </Button>
+            </CardFooter>
+            )}
+            
           </Card>
         </div>
       </div>

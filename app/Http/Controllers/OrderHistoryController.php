@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Inertia\Inertia;
+use App\Models\Order;
 use App\Models\OrderHistory;
 use Illuminate\Http\Request;
 
@@ -11,10 +12,28 @@ class OrderHistoryController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        return Inertia::render('order-history');
+        $user = $request->user();
+
+        // Get user's orders
+        $orders = Order::with('items.product')
+            ->where('user_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function($order) {
+                return [
+                    'id' => $order->id,
+                    'total_amount' => $order->items->sum(fn($i) => $i->price * $i->quantity) + 10, // include shipping
+                    'created_at' => $order->created_at->format('Y-m-d'),
+                ];
+            });
+
+        return Inertia::render('order-history', [
+            'orders' => $orders,
+        ]);
     }
+
 
     /**
      * Show the form for creating a new resource.

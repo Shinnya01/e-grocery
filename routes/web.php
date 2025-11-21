@@ -4,8 +4,10 @@ use Inertia\Inertia;
 use Laravel\Fortify\Features;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CartController;
+use App\Http\Controllers\OrderController;
 use App\Http\Controllers\UsersController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\OrderHistoryController;
 
 Route::get('/', function () {
     return Inertia::render('welcome', [
@@ -23,6 +25,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::resource('manage-users', UsersController::class);
     Route::resource('cart', CartController::class);
+
+    Route::resource('order', OrderController::class);
+    
 });
 
 
