@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Cart;
 use Inertia\Inertia;
 use App\Models\Product;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class ProductController extends Controller
 {
@@ -17,9 +19,16 @@ class ProductController extends Controller
             $products = Product::all();
 
             return Inertia::render('manage-products', compact('products'));
-        }
+        }else{
 
-        return Inertia::render('products');
+            
+            $carts = Cart::with('product') // eager load the related product
+                ->where('user_id', Auth::id()) // only current user's cart
+                ->get();
+
+            $products = Product::all();
+            return Inertia::render('products', compact('products', 'carts'));
+        }
     }
 
     /**
@@ -35,16 +44,17 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
-         // Validate inputs
+        // Validate inputs
         $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
             'stock' => 'required|integer|min:0',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg|max:5120', // 5MB
+            'category' => 'required|string', // <-- add this
+            'image' => 'nullable|image|mimes:jpeg,png,jpg|max:5120',
         ]);
 
-        $data = $request->only('name', 'description', 'price', 'stock');
+        $data = $request->only('name', 'description', 'price', 'stock', 'category'); // <-- include category
 
         // Handle image upload
         if ($request->hasFile('image')) {
@@ -52,11 +62,12 @@ class ProductController extends Controller
             $data['image'] = $path;
         }
 
-        Product::create($data);
+        Product::create($data); // now category is saved
 
         return redirect()->route('products.index')
             ->with('success', 'Product created successfully!');
     }
+
 
 
     /**
@@ -64,7 +75,7 @@ class ProductController extends Controller
      */
     public function show(Product $product)
     {
-        //
+        return Inertia::render('show-product', compact('product'));
     }
 
     /**
@@ -72,7 +83,7 @@ class ProductController extends Controller
      */
     public function edit(Product $product)
     {
-        //
+        return Inertia::render('edit-product', compact('product'));
     }
 
     /**
@@ -80,7 +91,33 @@ class ProductController extends Controller
      */
     public function update(Request $request, Product $product)
     {
-        //
+        // Validate inputs
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'price' => 'required|numeric|min:0',
+            'stock' => 'required|integer|min:0',
+            'category' => 'required|string',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg|max:5120',
+        ]);
+
+        $data = $request->only('name', 'description', 'price', 'stock', 'category');
+
+        // Handle image upload
+        if ($request->hasFile('image')) {
+            // Delete old image if exists
+            if ($product->image && \Storage::disk('public')->exists($product->image)) {
+                \Storage::disk('public')->delete($product->image);
+            }
+
+            $path = $request->file('image')->store('products', 'public');
+            $data['image'] = $path;
+        }
+
+        $product->update($data);
+
+        return redirect()->route('products.index')
+            ->with('success', 'Product updated successfully!');
     }
 
     /**
@@ -88,6 +125,16 @@ class ProductController extends Controller
      */
     public function destroy(Product $product)
     {
-        //
+        // Delete the product image from storage if it exists
+        if ($product->image && \Storage::disk('public')->exists($product->image)) {
+            \Storage::disk('public')->delete($product->image);
+        }
+
+        // Delete the product
+        $product->delete();
+
+        // Return a success response (for Inertia/JS)
+        return redirect()->route('products.index')
+            ->with('success', 'Product deleted successfully!');
     }
 }

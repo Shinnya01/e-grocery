@@ -13,7 +13,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table"
-import { ArrowUpDown, ChevronDown, MoreHorizontal, Plus, PlusCircle, Star } from "lucide-react"
+import { ArrowUpDown, ChevronDown, MoreHorizontal, PlusCircle } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -23,7 +23,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
@@ -36,17 +35,22 @@ import {
   TableRow,
 } from "@/components/ui/table"
 
-import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card"
 import AppLayout from "@/layouts/app-layout"
 import { dashboard } from "@/routes"
 import { Head, Link, router } from "@inertiajs/react"
 import { type BreadcrumbItem } from "@/types"
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 
-// -------------------------------------------------------
-// DATA
-// -------------------------------------------------------
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog"
+
+import { toast } from "sonner"
 
 interface Product {
   id: number
@@ -55,19 +59,37 @@ interface Product {
   price: string
   stock: number
   image: string
+  category: string
 }
 
-// -------------------------------------------------------
-// PAGE COMPONENT
-// -------------------------------------------------------
-export default function ManageProduct({ products }: { products: Product[]}) {
+export default function ManageProduct({ products }: { products: Product[] }) {
+  const [openDialog, setOpenDialog] = React.useState(false)
+  const [productToDelete, setProductToDelete] = React.useState<Product | null>(null)
 
   const handleEdit = (product: Product) => {
     router.visit(`/products/${product.id}/edit`)
   }
 
-  const handleDelete = (product: Product) => {
-    router.delete(`/products/${product.id}`);
+  const handleView = (product: Product) => {
+    router.visit(`/products/${product.id}`)
+  }
+
+  const handleDeleteClick = (product: Product) => {
+    setProductToDelete(product)
+    setOpenDialog(true)
+  }
+
+  const confirmDelete = () => {
+    if (!productToDelete) return
+
+    router.delete(`/products/${productToDelete.id}`, {
+      onSuccess: () => {
+        toast.success("Product deleted successfully!")
+        setOpenDialog(false)
+        setProductToDelete(null)
+      },
+      onError: () => toast.error("Failed to delete product."),
+    })
   }
 
   const columns: ColumnDef<Product>[] = [
@@ -106,10 +128,9 @@ export default function ManageProduct({ products }: { products: Product[]}) {
       ),
       cell: ({ row }) => <div className="font-medium ml-3">{row.getValue("name")}</div>,
     },
-      {
+    {
       accessorKey: "price",
       header: ({ column }) => (
-        <div className="">
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
@@ -118,14 +139,26 @@ export default function ManageProduct({ products }: { products: Product[]}) {
           Price
           <ArrowUpDown className="ml-3 h-4 w-4" />
         </Button>
-      </div>
       ),
       cell: ({ row }) => <div className="ml-3">{row.getValue("price")}</div>,
     },
-  {
+    {
+      accessorKey: "category",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="ml-auto"
+        >
+          Category
+          <ArrowUpDown className="ml-3 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => <div className="ml-3">{row.getValue("category")}</div>,
+    },
+    {
       accessorKey: "stock",
       header: ({ column }) => (
-        <div className="">
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
@@ -134,18 +167,12 @@ export default function ManageProduct({ products }: { products: Product[]}) {
           Stock
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
-      </div>
       ),
-      cell: ({ row }) => {
-        const stock = row.getValue("stock") as string
-
-        return <div className='capitalize font-medium ml-3'>{stock}</div>
-      },
+      cell: ({ row }) => <div className="capitalize font-medium ml-3">{row.getValue("stock")}</div>,
     },
-  {
+    {
       accessorKey: "status",
       header: ({ column }) => (
-        <div className="">
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
@@ -154,11 +181,9 @@ export default function ManageProduct({ products }: { products: Product[]}) {
           Status
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
-      </div>
       ),
       cell: ({ row }) => {
         const stock = Number(row.original.stock)
-
         let status = ""
         let color = ""
 
@@ -195,13 +220,14 @@ export default function ManageProduct({ products }: { products: Product[]}) {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuItem
-                onClick={() => handleEdit(product)}
-              >View Product
+              <DropdownMenuItem onClick={() => handleView(product)}>
+                View
               </DropdownMenuItem>
-              <DropdownMenuItem  
-                onClick={() => handleDelete(product)}
-                >Delete
+              <DropdownMenuItem onClick={() => handleEdit(product)}>
+                Edit
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleDeleteClick(product)}>
+                Delete
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -210,9 +236,7 @@ export default function ManageProduct({ products }: { products: Product[]}) {
     },
   ]
 
-  const breadcrumbs: BreadcrumbItem[] = [
-    { title: "Dashboard", href: dashboard().url },
-  ]
+  const breadcrumbs: BreadcrumbItem[] = [{ title: "Dashboard", href: dashboard().url }]
 
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
@@ -243,10 +267,12 @@ export default function ManageProduct({ products }: { products: Product[]}) {
       <Head title="Manage Products" />
       <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
         <div className="flex justify-between items-center">
-            <h1 className="font-bold text-2xl">Products</h1>
-            <Button asChild>
-                <Link href="/products/create"><PlusCircle/> Add Product</Link>
-            </Button>
+          <h1 className="font-bold text-2xl">Products</h1>
+          <Button asChild>
+            <Link href="/products/create">
+              <PlusCircle /> Add Product
+            </Link>
+          </Button>
         </div>
 
         {/* Filter + Column control */}
@@ -259,28 +285,6 @@ export default function ManageProduct({ products }: { products: Product[]}) {
             }
             className="max-w-sm"
           />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="ml-auto">
-                Columns <ChevronDown className="ml-2 h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {table
-                .getAllColumns()
-                .filter((column) => column.getCanHide())
-                .map((column) => (
-                  <DropdownMenuCheckboxItem
-                    key={column.id}
-                    className="capitalize"
-                    checked={column.getIsVisible()}
-                    onCheckedChange={(value) => column.toggleVisibility(!!value)}
-                  >
-                    {column.id}
-                  </DropdownMenuCheckboxItem>
-                ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
         </div>
 
         {/* Data Table */}
@@ -293,22 +297,16 @@ export default function ManageProduct({ products }: { products: Product[]}) {
                     <TableHead key={header.id}>
                       {header.isPlaceholder
                         ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
+                        : flexRender(header.column.columnDef.header, header.getContext())}
                     </TableHead>
                   ))}
                 </TableRow>
               ))}
             </TableHeader>
             <TableBody>
-              {table.getRowModel().rows?.length ? (
+              {table.getRowModel().rows.length ? (
                 table.getRowModel().rows.map((row) => (
-                  <TableRow
-                    key={row.id}
-                    data-state={row.getIsSelected() && "selected"}
-                  >
+                  <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id}>
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -329,10 +327,6 @@ export default function ManageProduct({ products }: { products: Product[]}) {
 
         {/* Pagination */}
         <div className="flex items-center justify-between py-4">
-          <div className="text-sm text-muted-foreground">
-            {table.getFilteredSelectedRowModel().rows.length} of{" "}
-            {table.getFilteredRowModel().rows.length} row(s) selected.
-          </div>
           <div className="space-x-2">
             <Button
               variant="outline"
@@ -353,6 +347,26 @@ export default function ManageProduct({ products }: { products: Product[]}) {
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={openDialog} onOpenChange={setOpenDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Delete</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete "{productToDelete?.name}"? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="space-x-2">
+            <Button variant="outline" onClick={() => setOpenDialog(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={confirmDelete}>
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   )
 }
