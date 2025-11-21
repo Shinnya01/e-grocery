@@ -28,8 +28,8 @@ const mainNavItems: NavItem[] = [
         icon: Shirt,
     },
     {
-        title: 'Users',
-        href: '/manage-users',
+        title: 'User Management',
+        href: '/manageUser',
         icon: Shirt,
     },
     {
