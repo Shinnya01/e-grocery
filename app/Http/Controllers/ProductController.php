@@ -32,6 +32,23 @@ class ProductController extends Controller
     }
 
     /**
+     * Return total products counts as JSON.
+     * Response: { total: int, active: int, out_of_stock: int }
+     */
+    public function totalProducts()
+    {
+        $total = Product::count();
+        $outOfStock = Product::where('stock', '<=', 0)->count();
+        $active = $total - $outOfStock;
+
+        return response()->json([
+            'total' => $total,
+            'active' => $active,
+            'out_of_stock' => $outOfStock,
+        ]);
+    }
+
+    /**
      * Show the form for creating a new resource.
      */
     public function create()
