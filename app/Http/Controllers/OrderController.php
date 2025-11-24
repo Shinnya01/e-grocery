@@ -22,6 +22,70 @@ class OrderController extends Controller
     }
 
     /**
+     * Return total sales (sum of total_amount across orders) as JSON.
+     */
+    public function totalSales()
+    {
+        // Sum all orders' total_amount. You can scope by status if needed (e.g. only 'delivered').
+        $total = Order::sum('total_amount');
+
+        return response()->json(['total_sales' => (float) $total]);
+    }
+
+    /**
+     * Return total orders counts as JSON.
+     *
+     * Response: { total_orders: int, pending: int, completed: int }
+     */
+    public function totalOrders()
+    {
+        $total = Order::count();
+
+        // pending
+        $pending = Order::where('status', 'pending')->count();
+
+        // treat accepted/delivered/received as completed
+        $completed = Order::whereIn('status', ['accepted', 'delivered', 'received'])->count();
+
+        return response()->json([
+            'total_orders' => $total,
+            'pending' => $pending,
+            'completed' => $completed,
+        ]);
+    }
+
+    /**
+     * Return sales totals for the last 7 days (date, total) as JSON.
+     * Response: [{ date: '2025-11-18', total: 123.45 }, ...]
+     */
+    public function salesByDay()
+    {
+        // Get sums grouped by date for the last 7 days
+        $start = now()->subDays(6)->startOfDay();
+
+        $rows = Order::where('created_at', '>=', $start)
+            ->selectRaw('DATE(created_at) as date, SUM(total_amount) as total')
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get()
+            ->keyBy('date')
+            ->map(fn($r) => (float) $r->total)
+            ->toArray();
+
+        // ensure every day in the range is present (fill zeros)
+        $result = [];
+        for ($i = 0; $i < 7; $i++) {
+            $d = $start->copy()->addDays($i)->toDateString();
+            $result[] = [
+                'date' => $d,
+                'total' => $rows[$d] ?? 0,
+            ];
+        }
+
+        return response()->json($result);
+    }
+
+    /**
      * Show the form for creating a new resource.
      */
     public function create()

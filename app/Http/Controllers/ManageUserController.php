@@ -66,4 +66,27 @@ class ManageUserController extends Controller
 
         return redirect()->back()->with('success', 'Customer deleted successfully.');
     }
+
+    /**
+     * Return customer counts as JSON.
+     * Response: { total: int, new: int, returning: int }
+     */
+    public function totalCustomers()
+    {
+        // consider 'customer' role only
+        $total = User::where('role', 'customer')->count();
+
+        // new customers in last 7 days
+        $new = User::where('role', 'customer')
+            ->where('created_at', '>=', now()->subDays(7))
+            ->count();
+
+        $returning = max(0, $total - $new);
+
+        return response()->json([
+            'total' => $total,
+            'new' => $new,
+            'returning' => $returning,
+        ]);
+    }
 }
