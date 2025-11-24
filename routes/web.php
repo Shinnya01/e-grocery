@@ -33,6 +33,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
         
         Route::resource('manage-users', UsersController::class);
         Route::resource('manageUser', ManageUserController::class);
+        // Report endpoint: total sales (JSON)
+        Route::get('reports/total-sales', [OrderController::class, 'totalSales'])->name('reports.total-sales');
+        // Report endpoint: total orders counts (JSON)
+        Route::get('reports/total-orders', [OrderController::class, 'totalOrders'])->name('reports.total-orders');
+        // Report endpoint: total products counts (JSON)
+        Route::get('reports/total-products', [ProductController::class, 'totalProducts'])->name('reports.total-products');
+        // Report endpoint: total customers counts (JSON)
+        Route::get('reports/total-customers', [ManageUserController::class, 'totalCustomers'])->name('reports.total-customers');
+        // Report endpoint: sales by day (last 7 days) for line chart
+        Route::get('reports/sales-by-day', [OrderController::class, 'salesByDay'])->name('reports.sales-by-day');
     });
     
     Route::resource('products', ProductController::class);

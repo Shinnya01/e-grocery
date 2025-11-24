@@ -32,7 +32,7 @@ import { cn, isSameUrl, resolveUrl } from '@/lib/utils';
 import { dashboard } from '@/routes';
 import { type BreadcrumbItem, type NavItem, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { BookOpen, Folder, LayoutGrid, Menu, Search, Shirt } from 'lucide-react';
+import { BookOpen, Folder, HandPlatter, History, LayoutGrid, Menu } from 'lucide-react';
 import AppLogo from './app-logo';
 import AppLogoIcon from './app-logo-icon';
 
@@ -40,12 +40,12 @@ const mainNavItems: NavItem[] = [
     {
         title: 'Products',
         href: '/products',
-        icon: Shirt,
+        icon: HandPlatter,
     },
     {
         title: 'Order History',
         href: '/order-history',
-        icon: Shirt,
+        icon: History,
     },
 ];
 
@@ -187,7 +187,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                 size="icon"
                                 className="group h-9 w-9 cursor-pointer"
                             >
-                                <Search className="!size-5 opacity-80 group-hover:opacity-100" />
+                        
                             </Button>
                             <div className="hidden lg:flex">
                                 {rightNavItems.map((item) => (
