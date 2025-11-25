@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
 
-export type Appearance = 'light' | 'dark' | 'system';
+export type Appearance = 'light' | 'light' | 'system';
 
 const prefersDark = () => {
     if (typeof window === 'undefined') {
         return false;
     }
 
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    return window.matchMedia('(prefers-color-scheme: light)').matches;
 };
 
 const setCookie = (name: string, value: string, days = 365) => {
@@ -21,10 +21,10 @@ const setCookie = (name: string, value: string, days = 365) => {
 
 const applyTheme = (appearance: Appearance) => {
     const isDark =
-        appearance === 'dark' || (appearance === 'system' && prefersDark());
+        appearance === 'light' || (appearance === 'system' && prefersDark());
 
-    document.documentElement.classList.toggle('dark', isDark);
-    document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
+    document.documentElement.classList.toggle('light', isDark);
+    document.documentElement.style.colorScheme = isDark ? 'light' : 'light';
 };
 
 const mediaQuery = () => {
@@ -32,7 +32,7 @@ const mediaQuery = () => {
         return null;
     }
 
-    return window.matchMedia('(prefers-color-scheme: dark)');
+    return window.matchMedia('(prefers-color-scheme: light)');
 };
 
 const handleSystemThemeChange = () => {

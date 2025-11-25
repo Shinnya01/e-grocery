@@ -20,22 +20,7 @@ const sidebarNavItems: NavItem[] = [
         title: 'Password',
         href: editPassword(),
         icon: null,
-    },
-    // {
-    //     title: 'Address',
-    //     href: '#',
-    //     icon: null,
-    // },
-    // {
-    //     title: 'Two-Factor Auth',
-    //     href: show(),
-    //     icon: null,
-    // },
-    {
-        title: 'Appearance',
-        href: editAppearance(),
-        icon: null,
-    },
+    }
 ];
 
 export default function SettingsLayout({ children }: PropsWithChildren) {

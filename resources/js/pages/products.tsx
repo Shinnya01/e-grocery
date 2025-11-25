@@ -109,10 +109,10 @@ export default function Products({ carts, products }: { carts: CartItem[], produ
                     <Card
                       key={i}
                       className={`p-4 rounded-lg flex flex-col items-center justify-start w-28 h-28 cursor-pointer transition shrink-0 gap-0
-                      ${selectedCategory === item.name ? 'bg-zinc-900' : 'hover:bg-zinc-800'}`}
+                      ${selectedCategory === item.name ? 'bg-zinc-600' : 'hover:bg-zinc-200'}`}
                       onClick={() => setSelectedCategory(selectedCategory === item.name ? null : item.name)}
                     >
-                      <Icon className="size-10 text-white shrink-0" />
+                      <Icon className="size-10  shrink-0" />
 
                       <span className="text-xs mt-2 text-center break-words">
                         {item.name}
@@ -262,7 +262,7 @@ export default function Products({ carts, products }: { carts: CartItem[], produ
             </CardContent>
 
             {cart.length > 0 && (
-              <CardFooter className="p-0 mt-auto bg-zinc-900 flex flex-col gap-2">
+              <CardFooter className="p-0 mt-auto flex flex-col gap-2">
                 <div className="flex justify-between p-2 w-full">
                   <span className="font-medium">Total:</span>
                   <span className="font-normal">

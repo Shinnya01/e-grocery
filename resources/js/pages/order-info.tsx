@@ -124,7 +124,7 @@ export default function OrderDetail({ order }: Props) {
               <p className="text-zinc-500 text-sm">{order?.customer_email ?? "alice@gmail.com"}</p>
               <p className="text-zinc-500 text-sm">{order?.customer_address ?? "123 Main St, Anytown, AN 12345"}</p>
 
-              <Card className="p-4 bg-zinc-900">
+              <Card className="p-4">
                 <div className="grid grid-cols-[1fr_auto]">
                   <div>
                     <CardTitle>Payment Method</CardTitle>
@@ -176,7 +176,7 @@ export default function OrderDetail({ order }: Props) {
         <Card className="p-4">
           <CardTitle>Delivery Status</CardTitle>
           <div className="space-y-2">
-            <div className="flex justify-between text-white text-xs">
+            <div className="flex justify-between text-xs">
               {/* Status Icons */}
               <div className="flex flex-col items-center gap-2">
                 <div className={`border p-3 rounded-full ${order?.status === "pending" || order?.status === "accepted" || order?.status === "received" || order?.status === "delivered" ? "bg-green-800" : ""}`}>
